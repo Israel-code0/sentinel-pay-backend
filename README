@@ -1,0 +1,80 @@
+# SentinelPay: Core Banking Engine 🚀
+SentinelPay is a robust, Spring Boot-based backend engine designed to handle core financial operations including user onboarding, real-time transfers, and transaction auditing.
+
+# 🛠 Tech Stack
+Java 17 (Open JDK)
+
+Spring Boot 3.x
+
+Spring Data JPA (Hibernate)
+
+MySQL (Relational Database)
+
+Lombok (Boilerplate reduction)
+
+# 🏗 System Architecture
+The system follows a standard N-Tier architecture to ensure scalability and separation of concerns.
+
+Controller Layer: Handles RESTful endpoints and request validation.
+
+Service Layer: Manages business logic (e.g., ensuring atomic transfers and automatic account generation).
+
+Repository Layer: Direct communication with MySQL using JPA.
+
+Audit Trail: Every movement of funds is logged into a dedicated transactions table with unique UUID references.
+
+# 🚦 Features
+Automated Onboarding: Creating a user automatically generates a 10-digit NUBAN-style account number and a linked wallet.
+
+Atomic Transfers: Uses @Transactional to ensure data consistency; money never disappears during a failed operation.
+
+Concurrency Control: (Optional mention) Managed balance updates using BigDecimal for financial precision.
+
+Global Error Handling: Professional JSON error responses for "Insufficient Funds" or "Account Not Found" scenarios.
+
+# 🔌 API Documentation
+1. User Registration
+Endpoint: POST /api/wallets/register
+
+Body:
+
+JSON
+{
+    "fullName": "Abolarin Israel",
+    "email": "israel@example.com",
+    "password": "secure_password"
+}
+2. Fund Transfer
+Endpoint: POST /api/wallets/transfer
+
+Body:
+
+JSON
+{
+    "senderAccountNumber": "1234567890",
+    "receiverAccountNumber": "0987654321",
+    "amount": 500.50
+}
+3. Transaction History
+Endpoint: GET /api/wallets/{accountNumber}/history
+
+4. Balance Inquiry
+Endpoint: GET /api/wallets/{accountNumber}/balance
+
+# 📦 Database Schema
+The database consists of three primary tables:
+
+users: Stores profile data and the primary account number.
+
+wallets: Stores real-time balances linked to user IDs.
+
+transactions: An immutable ledger of all historical transfers.
+
+# 🚀 How to Run
+Clone the repository.
+
+Update src/main/resources/application.properties with your MySQL credentials.
+
+Run mvn spring-boot:run or launch from IntelliJ.
+
+The application will automatically create the tables on the first run.
