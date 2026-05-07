@@ -1,15 +1,18 @@
 package org.israel.sentinelpay.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "transactions")
-@Getter @Setter
+@Getter
+@Setter
+@AllArgsConstructor
+@Builder
 public class Transaction {
 
     @Id
@@ -18,6 +21,10 @@ public class Transaction {
 
     @Column(unique = true, nullable = false)
     private String transactionReference;
+
+    @Column(name = "type", nullable = false)
+    @Enumerated(EnumType.STRING) // This tells JPA to use the String name (TRANSFER/DEPOSIT)
+    private TransactionType type;
 
     private String senderAccountNumber;
     private String receiverAccountNumber;
