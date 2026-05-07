@@ -40,8 +40,8 @@ Body:
 
 JSON
 {
-    "fullName": "Abolarin Israel",
-    "email": "israel@example.com",
+    "fullName": "your_full_name",
+    "email": "your@example.com",
     "password": "secure_password"
 }
 2. Fund Transfer
