@@ -4,10 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.israel.sentinelpay.dto.ApiResponse;
 import org.israel.sentinelpay.dto.DepositRequest;
 import org.israel.sentinelpay.dto.TransferRequest;
+import org.israel.sentinelpay.dto.WithdrawRequest;
 import org.israel.sentinelpay.model.Transaction;
+import org.israel.sentinelpay.model.TransactionType;
 import org.israel.sentinelpay.model.User;
 import org.israel.sentinelpay.service.TransferService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,11 +47,6 @@ public class WalletController {
         );
     }
 
-    @GetMapping("/{accountNumber}/history") // The variable is {accountNumber}
-    public List<Transaction> getHistory(@PathVariable String accountNumber) { // This must match
-        return transferService.getTransactionHistory(accountNumber);
-    }
-
     @GetMapping("/{accountNumber}/balance")
     public ResponseEntity<Map<String, Object>> getBalance(@PathVariable String accountNumber) {
         BigDecimal balance = transferService.getBalance(accountNumber);
@@ -78,5 +76,28 @@ public class WalletController {
         return ResponseEntity.ok(
                 ApiResponse.success("Deposit successful", transaction)
         );
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<ApiResponse<Transaction>> withdraw(@RequestBody WithdrawRequest request) {
+        Transaction transaction = transferService.withdraw(
+                request.getAccountNumber(),
+                request.getAmount()
+        );
+        return ResponseEntity.ok(
+                ApiResponse.success("Withdrawal successful", transaction)
+        );
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<ApiResponse<Page<Transaction>>> getHistory(
+            @RequestParam String accountNumber,
+            @RequestParam(required = false) TransactionType type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<Transaction> historyPage = transferService.getPaginatedHistory(accountNumber, type, page, size);
+        ApiResponse<Page<Transaction>> response = ApiResponse.success("History retrieved", historyPage);
+        return ResponseEntity.ok(response);
     }
 }

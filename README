@@ -1,40 +1,26 @@
-# SentinelPay: Core Banking Engine 🚀
-SentinelPay is a robust, Spring Boot-based backend engine designed to handle core financial operations including user onboarding, real-time transfers, and transaction auditing.
+🛡️ SentinelPay Backend
+SentinelPay is a robust, bank-grade Fintech API built with Spring Boot 3.
+It handles atomic transactions, user wallet management, and paginated transaction
+auditing with high data integrity.
 
-# 🛠 Tech Stack
-Java 17 (Open JDK)
+🚀 Key Features
+- Automated Wallet Generation: Creates a unique 10-digit account number upon user registration.
+- Atomic Transactions: Uses Spring @Transactional to ensure money is never lost during transfers.
+- Strict Audit Trail: Every movement of funds (Deposit, Withdrawal, Transfer) is logged with a unique UUID reference.
+- Smart History: Paginated and filterable transaction history to handle high-volume data efficiently.
+- Global Exception Handling: Custom FintechException logic for clean, consistent JSON error responses.
 
-Spring Boot 3.x
+🛠️ Tech Stack
+Java 17 & Spring Boot 3
+Spring Data JPA (MySQL)
+Lombok (Clean, boilerplate-free code)
+Maven (Dependency management)
 
-Spring Data JPA (Hibernate)
-
-MySQL (Relational Database)
-
-Lombok (Boilerplate reduction)
-
-# 🏗 System Architecture
-The system follows a standard N-Tier architecture to ensure scalability and separation of concerns.
-
-Controller Layer: Handles RESTful endpoints and request validation.
-
-Service Layer: Manages business logic (e.g., ensuring atomic transfers and automatic account generation).
-
-Repository Layer: Direct communication with MySQL using JPA.
-
-Audit Trail: Every movement of funds is logged into a dedicated transactions table with unique UUID references.
-
-# 🚦 Features
-Automated Onboarding: Creating a user automatically generates a 10-digit NUBAN-style account number and a linked wallet.
-
-Atomic Transfers: Uses @Transactional to ensure data consistency; money never disappears during a failed operation.
-
-Concurrency Control: (Optional mention) Managed balance updates using BigDecimal for financial precision.
-
-Global Error Handling: Professional JSON error responses for "Insufficient Funds" or "Account Not Found" scenarios.
-
-# 🔌 API Documentation
-1. User Registration
-Endpoint: POST /api/wallets/register
+📡 API Endpoints
+User Management
+1. Register User
+POST /api/wallets/register
+This endpoint allows you to register a new user in the system. Upon successful registration, the backend automatically generates a unique 10-digit account number and initializes a default wallet with a 0.00NGN balance.
 
 Body:
 
@@ -44,37 +30,120 @@ JSON
     "email": "your@example.com",
     "password": "secure_password"
 }
-2. Fund Transfer
-Endpoint: POST /api/wallets/transfer
+
+ 🪙 Wallet Operations
+2. 💸 Deposit Funds
+POST /api/wallets/deposit
+Used to add money to an account. It creates a transaction record marked as a "SYSTEM_DEPOSIT" and updates the wallet balance.
 
 Body:
 
 JSON
 {
-    "senderAccountNumber": "1234567890",
-    "receiverAccountNumber": "0987654321",
-    "amount": 500.50
+    "accountNumber": "1575941076",
+    "amount": 400.00
 }
-3. Transaction History
-Endpoint: GET /api/wallets/{accountNumber}/history
 
-4. Balance Inquiry
-Endpoint: GET /api/wallets/{accountNumber}/balance
+3. 💵 Withdraw Funds
+POST /api/wallets/withdraw
+Used to deduct money from an account. The system performs a real-time balance check; if the withdrawal amount exceeds the current balance, it triggers a custom exception and stops the process to prevent negative balances.
 
-# 📦 Database Schema
-The database consists of three primary tables:
+Body:
 
-users: Stores profile data and the primary account number.
+JSON
+{
+    "accountNumber": "9302750932",
+    "amount": 1000000.00
+}
 
-wallets: Stores real-time balances linked to user IDs.
+4. 💰 Internal Transfer
+POST /api/wallets/transfer
+Moves funds between two internal account numbers. This operation is wrapped in a Spring @Transactional block, ensuring that if either the sender's deduction or the receiver's addition fails, the entire process is rolled back to maintain data integrity.
 
-transactions: An immutable ledger of all historical transfers.
+Body:
 
-# 🚀 How to Run
-Clone the repository.
+JSON
+{
+    "senderAccountNumber": "9302750932",
+    "receiverAccountNumber": "0987654321",
+    "amount": 20000.00
+}
 
-Update src/main/resources/application.properties with your MySQL credentials.
+5. 📜 Transaction History
+Get Paginated History
+GET /api/wallets/history?accountNumber=1234567890
+Fetches a detailed audit trail of all fund movements for a specific account.
 
-Run mvn spring-boot:run or launch from IntelliJ.
+To keep the API fast and responsive, this endpoint uses Pagination and Filtering. You can customize your request using the following parameters:
 
-The application will automatically create the tables on the first run.
+- page: Specify which page of results to view (starts at 0).
+
+- size: Define how many transactions to see per page (e.g., 5, 10, or 20).
+
+- type: Filter your results to see only a specific category like DEPOSIT, TRANSFER, or WITHDRAWAL.
+
+🚦 Error Handling
+The API utilizes a centralized GlobalExceptionHandler.
+Instead of raw server errors, users receive a clean JSON response explaining exactly what went wrong,
+such as "Account not found" or "Insufficient funds," ensuring a smooth experience for frontend developers.
+
+JSON
+{
+  "success": false,
+  "message": "Insufficient funds for withdrawal. Current balance: 50.00",
+  "data": null
+}
+
+🛠️ How to Run
+Follow these steps to get the SentinelPay API running on your local machine:
+
+1. Prerequisites
+Java 17 or higher installed.
+
+MySQL Server running (managed via MySQL Workbench).
+
+Maven installed (or use the included Maven wrapper).
+
+Postman (for testing the endpoints).
+
+2. Clone the Repository
+Open your terminal and run:
+git clone https://github.com/Israel-code0/sentinel-pay-backend
+
+3. Database Configuration
+Open MySQL Workbench and create a new schema named sentinel_pay.
+
+Open src/main/resources/application.properties in your IDE.
+
+Update the following lines with your MySQL username and password:
+
+spring.datasource.url=jdbc:mysql://localhost:3306/sentinel_pay
+
+spring.datasource.username=YOUR_USERNAME
+
+spring.datasource.password=YOUR_PASSWORD
+
+Set spring.jpa.hibernate.ddl-auto=update to allow Hibernate to create the tables for you automatically.
+
+4. Build and Run
+Using IntelliJ IDEA:
+
+Open the project and wait for Maven to download dependencies.
+
+Open SentinelPayApplication.java and click the Green Play button.
+
+Using Terminal:
+
+Run: mvn spring-boot:run
+
+5. Testing the API
+Once the application starts on http://localhost:8081, you can begin testing.
+
+Use the Register endpoint first to generate your 10-digit account number.
+
+Use that account number to perform Deposits, Transfers, and Withdrawals.
+
+Check the History endpoint to see your paginated audit trail.
+
+📝 Final Note
+The database tables (users, wallets, transactions) are created automatically on the first run. You do not need to import any SQL scripts manually.

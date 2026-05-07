@@ -7,6 +7,10 @@ import org.israel.sentinelpay.repository.UserRepository;
 import org.israel.sentinelpay.repository.WalletRepository;
 import org.israel.sentinelpay.repository.TransactionRepository;
 import org.israel.sentinelpay.model.Transaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
@@ -60,12 +64,6 @@ public class TransferService {
 
        return transactionRepository.save(transaction);
     }
-    // Get transaction history
-    public List<Transaction> getTransactionHistory(String accountNumber) {
-        return transactionRepository.findBySenderAccountNumberOrReceiverAccountNumberOrderByCreatedAtDesc(
-                accountNumber, accountNumber
-        );
-    }
 
     public BigDecimal getBalance(String accountNumber) {
         Wallet wallet = walletRepository.findByAccountNumber(accountNumber)
@@ -115,5 +113,44 @@ public class TransferService {
         transaction.setCreatedAt(LocalDateTime.now());
 
         return transactionRepository.save(transaction);
+    }
+
+    @Transactional
+    public Transaction withdraw(String accountNumber, BigDecimal amount) {
+        // Find the wallet
+        Wallet wallet = walletRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new FintechException("Account not found"));
+
+        // Security Check: Ensure they have enough money
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw new FintechException("Insufficient funds for withdrawal. Current balance: " + wallet.getBalance());
+        }
+
+        // Update balance
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        walletRepository.save(wallet);
+
+        // Create the Transaction record
+        Transaction transaction = new Transaction();
+        transaction.setTransactionReference(UUID.randomUUID().toString());
+        transaction.setSenderAccountNumber(accountNumber);
+        transaction.setReceiverAccountNumber("SYSTEM_WITHDRAWAL"); // Audit trail marker
+        transaction.setAmount(amount);
+        transaction.setType(TransactionType.WITHDRAWAL); // Using our new Enum
+        transaction.setCreatedAt(LocalDateTime.now());
+
+        return transactionRepository.save(transaction);
+    }
+
+    public Page<Transaction> getPaginatedHistory(String accountNumber, TransactionType type, int page, int size) {
+        // Create a pageable object that sorts by 'createdAt' in descending order
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        if (type == null) {
+            return transactionRepository.findBySenderAccountNumberOrReceiverAccountNumber(
+                    accountNumber, accountNumber, pageable);
+        }
+        return transactionRepository.findBySenderAccountNumberOrReceiverAccountNumberAndType(
+                accountNumber, accountNumber, type, pageable);
     }
 }
